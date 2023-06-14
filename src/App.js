@@ -7,7 +7,7 @@ function App() {
   const alreadyMovies = JSON.parse(localStorage.getItem('items'));
   const [movies, setMovies] = useState(alreadyMovies ? alreadyMovies : []);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null)
+  const [error, setError] = useState(null);
 
   // function fetchMoviesHandler() {
   //   fetch('https://swapi.dev/api/films/').then(res => {
@@ -34,25 +34,26 @@ function App() {
     try {
       const response = await fetch('https://swapi.dev/api/films/') // 프로미스 반환 함수 앞에 await
       
-      if (!response.ok) {
+      // fetch API는 이런 에러 상태 코드를 실제 에러로 인식하지 않기에 다음과 같은 절차를 밟아야함
+      if (!response.ok) { // axios는 이런거 할 필요 없음 , 오류 상태 코드에 맞는 오류를 만들어서 전달해줌
         throw new Error('Something went wrong');
       }
       
       const data = await response.json();
-      const transformedMovies = data.results.map(movieData => {
-      return {
-        id: movieData.episode_id,
-        title: movieData.title,
-        openingText: movieData.opening_crawl,
-        releaseDate: movieData.release_date,
-      } 
-    })
-    setMovies(transformedMovies);
-    localStorage.setItem('items', JSON.stringify(transformedMovies));
+      const transformedMovies = data.results.map(movieData => { // 비어있는걸 돌릴 때 생기는 에러가 아니라 오류 상태 코드를 받았을 때 실제 오류가 발생하게끔 처리
+        return {
+          id: movieData.episode_id,
+          title: movieData.title,
+          openingText: movieData.opening_crawl,
+          releaseDate: movieData.release_date,
+        } 
+      })
+      setMovies(transformedMovies);
+      localStorage.setItem('items', JSON.stringify(transformedMovies));
     } catch (error) {
-      setError(error.message);
+      setError(error.message); // Something went wrong
     }
-    setLoading(false);
+    setLoading(false); // 응답이 성공이든 실패든 로딩이 필요없기에 밖에 뺌
   } 
 
   function deleteHandler() {
@@ -61,7 +62,19 @@ function App() {
     localStorage.removeItem('items');
   }
 
-  let content = <p>Found no movies.</p>
+  let content = <p>Found no movies.</p>;
+
+  if (movies.length > 0) {
+    content = <MoviesList movies={movies} />;
+  }
+
+  if (error) {
+    content = <p>{error}</p>;
+  }
+
+  if (loading) {
+    content = <p>Loading...</p>;
+  }
 
   return (
     <React.Fragment>
@@ -70,9 +83,10 @@ function App() {
         <button onClick={deleteHandler}>Delete everything</button>
       </section>
       <section>
-        {!loading && movies.length === 0 && !error && <p>nothing</p>}
+        {/* {!loading && movies.length === 0 && !error && <p>nothing</p>}
         {loading ? 'loading...' : <MoviesList movies={movies} />}
-        {!loading && error && <p>{error}</p>}
+        {!loading && error && <p>{error}</p>} */}
+        {content}
       </section>
     </React.Fragment>
   );
